@@ -11,3 +11,4 @@ Now the add-on will be installed, however not automatically enabled. The search 
 
 Once enabled, the add-on will appear in the 3D viewport's tools area.
 
+![alt text]( "Logo Title Text 1")
