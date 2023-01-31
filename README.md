@@ -19,4 +19,6 @@ The header has four icons just like the Subsurf modifier has. It also has Viewpo
   * Selected Objects - works on all currently selected objects with Subsurf modifiers.
   * Visible Objects - work on all objects that are currently visible in the 3D viewport.
 
-Clicking on the 'Apply SubSurf Settings' button executes the tool, changing the Subsurf Modifier settings on
+Clicking on the 'Apply SubSurf Settings' button executes the tool, changing the Subsurf Modifier settings on objects based upon the 'Apply to:' selection.
+
+
