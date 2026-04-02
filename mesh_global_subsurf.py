@@ -22,11 +22,11 @@ import bpy
 bl_info = {
     "name": "Global Subsurf Settings",
     "author": "revolt_randy",
-    "version": (1, 0, 3),
-    "blender": (3, 4, 1),
+    "version": (1, 5, 0),
+    "blender": (3, 6, 5),
     "location": "View3D > Tools > Global Subsurf",
     "description": "Changes subsurf modifier level settings",
-    "warning": "Beta release",
+    "warning": "",
     "wiki_url": "",
     "tracker_url": "",
     "category": "Mesh"}
@@ -43,19 +43,33 @@ bl_info = {
 # 3rd version: 1/30/2023
 #   - updated to blender 3.4.1
 #   - cleaned up UI/code
+# 4th version: 9/30/2024
+#   - fixed it to work in edit mode for any object that can have a subsurf mod
+#   - set min blender version to 3.6.5
+# 5th version: 3/31/2026
+#   - created __init.py__ file to simpify installing from github.
+#
 
 
-class SubsurfSettingsPanel(bpy.types.Panel):
+class SUBSURF_SETTINGS_PT_Panel(bpy.types.Panel):
+    bl_idname = "SUBSURF_SETTINGS_PT_Panel"
     bl_label = "Global Subsurf"
     bl_space_type = "VIEW_3D"
     bl_region_type = "TOOLS"
     
+    valid_modes = ['OBJECT', 'EDIT_MESH', 'EDIT_CURVE', 'EDIT_SURFACE', 'EDIT_TEXT']   # need to add all modes to this list
+    
+    
     @classmethod
     def poll(self, context):
+        #print(context.mode)
         try:
-           return (context.mode == 'OBJECT' or conext.mode == 'EDIT')
+            if context.mode in self.valid_modes:            
+                return True
+            else:
+                return False
         except AttributeError:
-           return 0
+            return 0
        
     def draw(self, context):
         settings = bpy.context.scene.subsurf_settings
@@ -75,56 +89,41 @@ class SubsurfSettingsPanel(bpy.types.Panel):
         row.prop(settings, 'show_render', toggle = True,\
             icon = 'RESTRICT_RENDER_OFF', icon_only = True)
               
-        # levels settings sub box
-        sub_box = box.box()      
-        sub_box.label(text="Subdivison Levels:") 
-                
-        row = sub_box.row()
+        row = box.row()
         
         split = row.split()
         col = split.column()
-        col.label(text='Viewport')
+        col.label(text='Levels Viewport')
         col.label(text='Render')
         
         col = split.column(align=True)
         col.prop(settings, 'view_level', text = '')
         col.prop(settings, 'render_level', text = '')
-
-        row = sub_box.row()
-        row.prop(settings, 'opt_display', text = 'Optimal Display')
+        col.prop(settings, 'opt_display', text = 'Optimal Display')
         
-        sub_box.prop(settings, 'object_sel', text="Apply to")
+        row = layout.row()
+        row.prop(settings, 'object_sel', text="Apply to")
               
         # operator
-        box.operator('subsurf.settings')
+        row = layout.row()
+        row.operator('subsurf_settings.operator')
 # end of - class SubsurfSettingsPanel(bpy.types.Panel): 
 
 
-class SubsurfSettingsOP(bpy.types.Operator):
-    bl_idname = "subsurf.settings"
+class SUBSURF_SETTINGS_OT_Operator(bpy.types.Operator):
+    bl_idname = "subsurf_settings.operator"
     bl_label = "Apply Subsurf Settings"
     bl_description = "Apply these settings to objects with subsurf modifiers"
     bl_options = {'REGISTER', 'UNDO'}
     
     
     def execute(self, context):
-        print("SubsurfSettingsOP - started")
+        #print("SubsurfSettingsOP - started")
         obj = bpy.data.objects
         settings = bpy.context.scene.subsurf_settings        
         
         obj_list = [] # define obj_list list - a list of all objects
         # that can have subsurf modifiers 
-            
-        # from UI
-        view_levels = settings.view_level # define view levels for subsurf 
-        render_levels = settings.render_level # define render levels for subsurf
-        optimal_display = settings.opt_display # flag for optimal display            
-        show_render = settings.show_render # show modifier while rendering
-        show_view = settings.show_view # show modifier while viewing in 3d view
-        show_edit = settings.show_edit # show modifier while in edit mode
-        show_cage = settings.show_cage # show modifier on edit cage
-        select = settings.object_sel # define select - this is what 
-        #objects will be worked on. ALL, SEL, or VIS
         
         # loop thru all objects, adding only objects that can have subsurf
         # modifiers on them to obj_list list
@@ -138,14 +137,14 @@ class SubsurfSettingsOP(bpy.types.Operator):
                 
                 # object can have a subsurf modifier on it, now check to see
                 # if it should be added to obj_list based on UI
-                if select == 'ALL':
+                if settings.object_sel == 'ALL':
                     obj_list.append(index)
-                elif select == 'SEL' and index in bpy.context.selected_objects:
+                elif settings.object_sel == 'SEL' and index in bpy.context.selected_objects:
                     obj_list.append(index)
-                elif select == 'VIS' and index.visible_get():
+                elif settings.object_sel == 'VIS' and index.visible_get():
                     obj_list.append(index)       
         
-        # loop thru all objects
+        # loop thru all objects to be worked on
         for object in obj_list:
             obj_modifiers = object.modifiers
             
@@ -154,16 +153,16 @@ class SubsurfSettingsOP(bpy.types.Operator):
                 # check for subsurf modifier & set levels/settings
                 if mod.type == "SUBSURF": 
                     
-                    mod.levels = view_levels
-                    mod.render_levels = render_levels
+                    mod.levels = settings.view_level
+                    mod.render_levels = settings.render_level
                                         
                     # set render, object, edit, cage mode, optimal display
                     # for modifier
-                    mod.show_render = show_render
-                    mod.show_viewport = show_view
-                    mod.show_in_editmode = show_edit 
-                    mod.show_on_cage = show_cage
-                    mod.show_only_control_edges = optimal_display
+                    mod.show_render = settings.show_render
+                    mod.show_viewport = settings.show_view
+                    mod.show_in_editmode = settings.show_edit 
+                    mod.show_on_cage = settings.show_cage
+                    mod.show_only_control_edges = settings.opt_display
                                                                     
         return{'FINISHED'}
 
@@ -210,8 +209,8 @@ class subsurf_settings(bpy.types.PropertyGroup):
         
         subsurf_settings.opt_display = bpy.props.BoolProperty( \
             name="Optimal", \
-            description="Skip displaying interior subdivided endges.", \
-            default=False)      
+            description="Skip displaying interior subdivided edges.", \
+            default=True)      
                 
         subsurf_settings.object_sel = bpy.props.EnumProperty( \
             name = "Objects", \
@@ -230,13 +229,13 @@ class subsurf_settings(bpy.types.PropertyGroup):
    
             
 def register():
-    bpy.utils.register_class(SubsurfSettingsOP)
-    bpy.utils.register_class(SubsurfSettingsPanel)
+    bpy.utils.register_class(SUBSURF_SETTINGS_OT_Operator)
+    bpy.utils.register_class(SUBSURF_SETTINGS_PT_Panel)
     bpy.utils.register_class(subsurf_settings)
 
 def unregister():
-    bpy.utils.unregister_class(SubsurfSettingsOP)
-    bpy.utils.unregister_class(SubsurfSettingsPanel)
+    bpy.utils.unregister_class(SUBSURF_SETTINGS_OT_Operator)
+    bpy.utils.unregister_class(SUBSURF_SETTINGS_PT_Panel)
     bpy.utils.unregister_class(subsurf_settings)    
     
 if __name__ == "__main__":
