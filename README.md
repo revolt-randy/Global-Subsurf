@@ -5,7 +5,7 @@ This blender add-on tool is for changing various Subsurf Modifier settings for a
 
 ## Installation:  
 
-From blender's Edit->Preferences menu, in the Add-ons tab, left-click the 'Install...' button and use the file browser to select the .zip or .py add-on file.  
+From blender's Edit->Preferences menu, in the Add-ons tab, left-click the 'Install...' button and use the file browser to select the .zip file downloaded from the green Code button.  
    
 Now the add-on will be installed, however not automatically enabled. The search field will be set to the add-on’s name (to avoid having to look for it), Enable the add-on by checking the enable checkbox.
 
